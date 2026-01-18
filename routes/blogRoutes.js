@@ -51,58 +51,52 @@ router.post('/', upload.single('image'), async (req, res) => {
 
   try {
     const newPost = await post.save();
+    console.log("✅ Article sauvegardé en base de données");
 
-    if (sendEmail === "true") {
+    // Vérification stricte de la condition d'envoi
+    if (String(sendEmail) === "true") {
       let recipients = [];
       if (emailTargetType === "custom" && customEmails) {
         recipients = customEmails.split(',').map(e => e.trim());
       }
 
       if (recipients.length > 0) {
-        // --- OPTIMISATION ANTI-SPAM ---
-        await transporter.sendMail({
-          from: '"Patrick Resseng" <info@patrickresseng.com>',
-          to: recipients.join(','),
-          subject: title, // Pas d'émoji au début pour le test
-          headers: {
-            'List-Unsubscribe': '<mailto:info@patrickresseng.com?subject=unsubscribe>',
-            'Precedence': 'bulk'
-          },
-          html: `
-            <div style="background-color: #fffaf0; padding: 40px; font-family: 'Times New Roman', serif; color: #1a1a1a; border: 1px solid #ce9a10; max-width: 600px; margin: auto;">
-              <div style="text-align: center; border-bottom: 1px solid rgba(206, 154, 16, 0.3); padding-bottom: 20px; margin-bottom: 25px;">
-                <span style="color: #ce9a10; text-transform: uppercase; letter-spacing: 3px; font-size: 14px; font-weight: bold;">Patrick Resseng</span>
+        console.log(`📧 Tentative d'envoi à ${recipients.length} destinataires...`);
+        
+        try {
+          await transporter.sendMail({
+            from: '"Patrick Resseng" <info@patrickresseng.com>',
+            to: recipients.join(','),
+            subject: title,
+            headers: {
+              'List-Unsubscribe': '<mailto:info@patrickresseng.com?subject=unsubscribe>',
+              'Precedence': 'bulk'
+            },
+            html: `
+              <div style="background-color: #fffaf0; padding: 40px; font-family: 'Times New Roman', serif; color: #1a1a1a; border: 1px solid #ce9a10; max-width: 600px; margin: auto;">
+                <h1 style="text-align: center;">${title}</h1>
+                ${req.file ? `
+                  <div style="text-align: center;">
+                    <img src="https://patrick-backend.onrender.com/uploads/blog/${req.file.filename}" style="width: 100%; max-width: 500px;" />
+                  </div>` : ''}
+                <p style="font-size: 18px; line-height: 1.8; text-align: center;">"${excerpt}"</p>
+                <div style="text-align: center; margin-top: 35px;">
+                  <a href="https://patrickresseng.com/blog" style="background-color: #1a1a1a; color: #ce9a10; padding: 18px 40px; text-decoration: none; font-weight: bold;">LIRE L'ARTICLE COMPLET</a>
+                </div>
               </div>
-              
-              <h1 style="font-size: 26px; text-align: center; margin-bottom: 20px; color: #1a1a1a;">${title}</h1>
-              
-              ${req.file ? `
-                <div style="text-align: center;">
-                  <img src="https://patrickresseng.com/uploads/blog/${req.file.filename}" alt="${title}" style="width: 100%; max-width: 500px; border: 1px solid #ce9a10; padding: 5px; background: #fff;" />
-                </div>` : ''}
-              
-              <p style="font-size: 18px; line-height: 1.8; color: #333; margin-top: 25px; font-style: italic; text-align: center; padding: 0 20px;">
-                "${excerpt}"
-              </p>
-              
-              <div style="text-align: center; margin-top: 35px;">
-                <a href="https://patrickresseng.com/blog" style="background-color: #1a1a1a; color: #ce9a10; padding: 18px 40px; text-decoration: none; font-weight: bold; letter-spacing: 2px; border: 1px solid #ce9a10; display: inline-block; font-size: 13px;">
-                  LIRE L'ARTICLE COMPLET
-                </a>
-              </div>
-              
-              <p style="text-align: center; font-size: 10px; color: #999; margin-top: 40px; letter-spacing: 1px;">
-                Vous recevez cet e-mail car vous êtes inscrit sur patrickresseng.com.<br>
-                <a href="mailto:info@patrickresseng.com?subject=Unsubscribe" style="color: #ce9a10;">Se désabonner</a>
-              </p>
-            </div>
-          `
-        });
+            `
+          });
+          console.log("🚀 E-mails envoyés avec succès !");
+        } catch (mailErr) {
+          console.error("❌ Erreur spécifique Nodemailer :", mailErr);
+          // On ne bloque pas la réponse 201 même si le mail échoue
+        }
       }
     }
+
     res.status(201).json(newPost);
   } catch (err) {
-    console.error("Détail erreur mail:", err);
+    console.error("❌ Erreur globale route POST :", err);
     res.status(400).json({ message: err.message });
   }
 });

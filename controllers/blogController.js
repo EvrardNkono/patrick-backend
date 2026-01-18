@@ -7,8 +7,8 @@ const transporter = nodemailer.createTransport({
   port: 465,
   secure: true, // Port 465 utilise SSL
   auth: {
-    user: 'ton-email@ton-domaine.com', // Crée cette adresse sur Hostinger
-    pass: 'ton-mot-de-passe-email'
+    user: 'info@patrickresseng.com', // Crée cette adresse sur Hostinger
+    pass: 'Chesstitan1#'
   }
 });
 
