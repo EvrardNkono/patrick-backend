@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const Teaching = require('../models/Teaching');
+const Teaching = require('../models/teaching'); // Petit commentaire pour forcer Git
 const multer = require('multer');
 const path = require('path');
 
